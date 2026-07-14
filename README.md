@@ -2,7 +2,7 @@
 
 ## 概要
 
-**Simulated Asset Management (SAM)** は、複数の戦略を運用する架空のマルチアセット投資会社です。このガイドでは、**Snowflake Intelligence** がAIエージェントを通じてどのように投資管理を変革するかを紹介します。AIエージェントは以下を シームレスにオーケストレーションします：
+**Simulated Asset Management (SAM)** は、複数の戦略を運用する架空のマルチアセット投資会社です。このガイドでは、**Snowflake CoWork** がAIエージェントを通じてどのように投資管理を変革するかを紹介します。AIエージェントは以下を シームレスにオーケストレーションします：
 
 - **構造化データ**: SEC提出書類からの実際の証券、ポートフォリオ保有銘柄、ファクターエクスポージャー、ESGスコア
 - **非構造化ドキュメント**: ブローカーリサーチレポート、決算説明会議事録、プレスリリース、ポリシードキュメント
@@ -70,7 +70,7 @@ sfguide-agentic-ai-for-asset-management/
 ### 前提条件
 - Cortex機能が有効なSnowflakeアカウント
 - ACCOUNTADMINロール（セットアップ用）
-- Snowflake Intelligenceが利用可能
+- Snowflake CoWorkが利用可能
 
 ### ステップ1: マーケットプレイスデータの取得（初回のみ）
 
@@ -95,11 +95,11 @@ sfguide-agentic-ai-for-asset-management/
 - 実際のSEC提出書類を含むMARKET_DATAテーブル
 - ドキュメント検索用のCortex Searchサービス
 - 構造化クエリ用のCortex Analystセマンティックビュー
-- 各ビジネスロール用のSnowflake Intelligenceエージェント
+- 各ビジネスロール用のSnowflake CoWorkエージェント
 
-### ステップ3: Snowflake Intelligenceへのアクセス
+### ステップ3: Snowflake CoWorkへのアクセス
 
-**Snowflake Intelligence** → エージェントを選択 → 質問を開始！
+**Snowflake CoWork** → エージェントを選択 → 質問を開始！
 
 ---
 
@@ -305,7 +305,7 @@ SAM Technology & Infrastructureについて以下を含む完全なコンプラ�
 
 ## リソース
 
-- [Snowflake Intelligenceドキュメント](https://docs.snowflake.com/en/user-guide/snowflake-intelligence)
+- [Snowflake CoWorkドキュメント](https://docs.snowflake.com/en/user-guide/snowflake-intelligence)
 - [Cortex Agentsガイド](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents)
 - [Cortex Searchドキュメント](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-search)
 - [Cortex Analystドキュメント](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-analyst)
