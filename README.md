@@ -17,22 +17,22 @@ Snowflake CoWork、Cortex Agents、Cortex Analyst、Cortex Searchを使用して
 
 ## クイックスタート（約15〜20分）
 
-### ステップ1: インフラセットアップ（約2分）
-
-[`scripts/setup.sql`](scripts/setup.sql) を Snowflake SQL ワークシートで実行します。これにより以下が作成されます：
-- 2つのウェアハウス（`SAM_DEMO_EXECUTION_WH` と `SAM_DEMO_CORTEX_WH`）
-- すべてのスキーマを持つ `SAM_DEMO` データベース
-- 必要な権限を持つ `SAM_DEMO_ROLE`（タスク実行を含む）
-- マーケットプレイスデータ共有（Snowflake Public Data - 無料）の自動インストール
-- Cortex AI有効化とSnowflake Intelligence
-
-### ステップ2: Gitワークスペースの作成
+### ステップ1: Gitワークスペースの作成
 
 1. **Projects > Workspaces** に移動
 2. **「+」** → **「Gitリポジトリから」** をクリック
 3. Repository URL: `https://github.com/sfc-gh-kmotokubota/sfguide-agentic-ai-for-asset-management-ja.git`
 4. 認証: パブリックリポジトリ（認証不要）
 5. ワークスペースに名前を付ける（例：「SAM Demo JA」）
+
+### ステップ2: インフラセットアップ（約2分）
+
+ワークスペース内で [`scripts/setup.sql`](scripts/setup.sql) を開いて実行します。これにより以下が作成されます：
+- 2つのウェアハウス（`SAM_DEMO_EXECUTION_WH` と `SAM_DEMO_CORTEX_WH`）
+- すべてのスキーマを持つ `SAM_DEMO` データベース
+- 必要な権限を持つ `SAM_DEMO_ROLE`（タスク実行を含む）
+- マーケットプレイスデータ共有（Snowflake Public Data - 無料）の自動インストール
+- Cortex AI有効化とSnowflake Intelligence
 
 ### ステップ3: セットアップの実行（約15〜20分）
 
