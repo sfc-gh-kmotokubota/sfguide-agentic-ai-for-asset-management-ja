@@ -1,309 +1,175 @@
 # アセットマネジメント向けエージェント型AI
 
-## 概要
+Snowflake CoWork、Cortex Agents、Cortex Analyst、Cortex Searchを使用して、投資管理向けの完全なマルチエージェントAIシステムを構築します。
 
-**Simulated Asset Management (SAM)** は、複数の戦略を運用する架空のマルチアセット投資会社です。このガイドでは、**Snowflake CoWork** がAIエージェントを通じてどのように投資管理を変革するかを紹介します。AIエージェントは以下を シームレスにオーケストレーションします：
+## 構成コンポーネント
 
-- **構造化データ**: SEC提出書類からの実際の証券、ポートフォリオ保有銘柄、ファクターエクスポージャー、ESGスコア
-- **非構造化ドキュメント**: ブローカーリサーチレポート、決算説明会議事録、プレスリリース、ポリシードキュメント
-- **リアルタイム分析**: Cortex Analystが自然言語をSQLに変換
-- **ドキュメントインテリジェンス**: Cortex SearchがRAGによるドキュメント統合を実現
-
-### このガイドの特徴
-
-| 機能 | 説明 |
-|------|------|
-| **実際の証券** | すべての証券はSEC提出書類（OpenFIGI）からの本物のデータ |
-| **マルチツールオーケストレーション** | エージェントがクエリごとに3〜14のツールを動的に組み合わせ |
-| **業界標準モデル** | 監査証跡を備えたディメンション/ファクトアーキテクチャ |
-| **完全なワークフローカバレッジ** | フロント、ミドル、バックオフィスをカバーするエージェント |
+| コンポーネント | 数量 | 説明 |
+|--------------|------|------|
+| **Cortex Agents** | 8 | ポートフォリオ、リサーチ、セールス、エグゼクティブ、リスク＆コンプライアンス、オペレーション、プライベートクレジット、プライベートエクイティ |
+| **セマンティックビュー** | 10 | 構造化データクエリ用Cortex Analystモデル |
+| **検索サービス** | 16 | ブローカーリサーチ、決算書類、SEC提出書類にまたがるドキュメント検索 |
+| **エージェントスキル** | 36 | 特化型ワークフロー（バックテスト、モンテカルロ、メモ生成など） |
+| **データテーブル** | 60以上 | 14,000以上のSEC提出書類からの実際の証券＋生成ポートフォリオ |
+| **MLノートブック** | 3 | ファクター探索、マーケットレジーム検出、クレジットリスクモデリング |
 
 ---
 
-## 学べること
+## クイックスタート（約15〜20分）
 
-このガイドを通じて、以下の方法を理解できます：
+### ステップ1: インフラセットアップ（約2分）
 
-1. **マルチツールAIエージェントの構築** - Cortex Analyst（構造化データ）とCortex Search（ドキュメント）を単一の会話インターフェースで組み合わせる
+[`scripts/setup.sql`](scripts/setup.sql) を Snowflake SQL ワークシートで実行します。これにより以下が作成されます：
+- 2つのウェアハウス（`SAM_DEMO_EXECUTION_WH` と `SAM_DEMO_CORTEX_WH`）
+- すべてのスキーマを持つ `SAM_DEMO` データベース
+- 必要な権限を持つ `SAM_DEMO_ROLE`（タスク実行を含む）
+- マーケットプレイスデータ共有（Snowflake Public Data - 無料）の自動インストール
+- Cortex AI有効化とSnowflake Intelligence
 
-2. **セマンティックビューの設計** - 自然言語を自動的にSQLに変換するビジネスフレンドリーなデータモデルを作成する
+### ステップ2: Gitワークスペースの作成
 
-3. **スケーラブルなRAGの実装** - Cortex Searchを使用して複数のコーパスタイプにまたがる数千のドキュメントをインデックス化する
+1. **Projects > Workspaces** に移動
+2. **「+」** → **「Gitリポジトリから」** をクリック
+3. Repository URL: `https://github.com/sfc-gh-kmotokubota/sfguide-agentic-ai-for-asset-management-ja.git`
+4. 認証: パブリックリポジトリ（認証不要）
+5. ワークスペースに名前を付ける（例：「SAM Demo JA」）
 
-4. **業界固有のエージェントの作成** - ロール固有の指示、ツールアクセス、ビジネスコンテキストを持つエージェントを設定する
+### ステップ3: セットアップの実行（約15〜20分）
 
-5. **リアルなデモデータの生成** - プレースホルダーハイドレーションによるテンプレートベースのドキュメント生成を使用して本格的なコンテンツを作成する
+1. ワークスペースで `python/workspace_main.py` を開く
+2. プロンプトが表示されたら **ノートブックサービス** を接続：
+   - Pythonバージョン: 3.11以上
+   - コンピュートプール: 利用可能な任意のプール
+   - Artifact repositories（任意）: SNOWFLAKE.SNOWPARK.PYPI_SHARED_REPOSITORY
+3. ターミナルを開いて実行: `pip install -r "$PWD/requirements.txt"`
+4. カーネルを再起動
+5. **「Run」** をクリック
 
-6. **実データソースの統合** - Snowflake MarketplaceをSEC提出書類、株価、財務データに活用する
+スクリプトが以下を順次構築します：
+- 実際の証券データからのディメンション・ファクトテーブル
+- Snowflake Marketplace からのマーケットデータ（SEC提出書類、価格、セグメント）
+- 70以上のテンプレートからのドキュメントコーパス
+- セマンティックビュー、検索サービス、ツール
+- 36のスキルを持つ8つのCortex Agent
+
+### ステップ4: エージェントの使用
+
+1. **AI & ML > Snowflake CoWork** に移動
+2. 任意のエージェントを選択
+3. 質問を開始！
 
 ---
 
-## リポジトリ構造
+## エージェント一覧
+
+| エージェント | ロール | 主な機能 |
+|------------|--------|---------|
+| **Portfolio Copilot** | ポートフォリオマネージャー | 保有銘柄、アトリビューション、リスク、バックテスト、モンテカルロ、パフォーマンスナラティブ |
+| **Research Copilot** | リサーチアナリスト | 株式リサーチレポート、決算インテリジェンス、競合分析、投資メモ |
+| **Sales Advisor** | クライアントリレーションズ | ミーティングブリーフ、クライアントレター、RFP対応、フロー分析 |
+| **Executive Command Center** | 経営幹部 | 会社KPI、戦略ランキング、競合インテリジェンス、M&Aシミュレーション |
+| **Risk & Compliance** | リスクオフィサー | ポジション制限、マンデート違反、ESG監視、規制調査 |
+| **Operations Copilot** | ミドルオフィス | 決済追跡、照合、NAV、コーポレートアクション |
+| **Private Credit Copilot** | クレジットPM | コベナンツ監視、ディールパイプライン、借り手財務状況 |
+| **Private Equity Copilot** | PE PM | ディールソーシング、デューデリジェンス、バリュークリエーション追跡 |
+
+---
+
+## デモシナリオ
+
+各エージェントには、ステップバイステップの会話フローを含む包括的なデモシナリオがあります：
+
+- [ポートフォリオマネジメントシナリオ](docs/demo_scenarios_portfolio_management.md)
+- [リサーチアナリストシナリオ](docs/demo_scenarios_research.md)
+- [クライアントアドバイザリーシナリオ](docs/demo_scenarios_client_advisory.md)
+- [リスク＆コンプライアンスシナリオ](docs/demo_scenarios_risk_compliance.md)
+- [オペレーションシナリオ](docs/demo_scenarios_operations.md)
+- [エグゼクティブリーダーシップシナリオ](docs/demo_scenarios_executive_leadership.md)
+- [プライベートエクイティシナリオ](docs/demo_scenarios_private_equity.md)
+- [プライベートクレジットシナリオ](docs/demo_scenarios_private_credit.md)
+- [MLノートブックシナリオ](docs/demo_scenarios_ml.md)
+- [全シナリオ概要](docs/demo_scenarios.md)
+
+---
+
+## プロジェクト構造
 
 ```
-sfguide-agentic-ai-for-asset-management/
-├── scripts/
-│   ├── setup.sql                    # 自動セットアップ（約15〜20分）
-│   └── teardown.sql                 # 完全クリーンアップスクリプト
-├── python/                          # Pythonモジュール
-│   ├── config.py                    # 中央設定
-│   ├── generate_structured.py       # ディメンション/ファクトテーブル生成
-│   ├── generate_unstructured.py     # ドキュメント生成
-│   ├── generate_market_data.py      # 実市場データ
-│   ├── create_agents.py             # エージェント定義
-│   ├── create_semantic_views.py     # セマンティックビュー定義
-│   ├── create_cortex_search.py      # 検索サービス定義
-│   └── ...
-├── content_library/                 # ドキュメントテンプレート
-│   ├── _rules/                      # YAML設定
-│   ├── security/                    # ブローカーリサーチ、プレスリリース
-│   ├── issuer/                      # NGOレポート、エンゲージメントノート
-│   ├── portfolio/                   # IPS、ポートフォリオレビュー
-│   └── global/                      # ポリシードキュメント、手続き
-└── docs/                            # デモシナリオドキュメント
+python/
+├── workspace_main.py       <- ワークスペースエントリーポイント（「Run」をクリック）
+├── main.py                 <- CLIエントリーポイント（ローカル開発用）
+├── config.py               <- 中央設定
+├── ai/
+│   ├── agents/             <- 8つのエージェント定義
+│   ├── tools/              <- UDF/SP（バックテスト、モンテカルロ、PDF生成など）
+│   ├── builder.py          <- AIオーケストレーション
+│   ├── cortex_search.py    <- 検索サービス作成
+│   └── semantic_views.py   <- セマンティックビュー作成
+├── data/
+│   ├── structured.py       <- ディメンション/ファクト生成
+│   ├── market_data.py      <- マーケットプレイスデータ統合
+│   ├── unstructured.py     <- ドキュメントコーパス生成
+│   └── pipelines.py        <- ストリーム/タスクパイプラインインフラ
+├── core/                   <- ハイドレーションエンジン、PDFエクスポート
+└── utils/                  <- DBヘルパー、SQLユーティリティ、ロギング
+
+data/
+├── skills/                 <- 36のエージェントスキル定義（YAML）
+│   ├── historical-backtest/
+│   ├── monte-carlo-simulation/
+│   ├── equity-research-report/
+│   ├── investment-memo-generation/
+│   ├── earnings-intelligence/
+│   ├── brinson-attribution/
+│   ├── factor-model-explorer/
+│   ├── portfolio-optimizer/
+│   ├── concentration-risk-assessment/
+│   ├── esg-mandate-compliance/
+│   ├── covenant-monitoring/
+│   ├── deal-pipeline-screening/
+│   ├── quarterly-client-letter/
+│   ├── rfp-response-preparation/
+│   ├── executive-briefing/
+│   └── ... （その他21スキル）
+└── reference_data/         <- YAML設定ファイル
+
+content_library/            <- 70以上のドキュメントテンプレート
+
+notebooks/
+├── factor_discovery.ipynb          <- ファクター探索ノートブック
+├── market_regime_detection.ipynb   <- マーケットレジーム検出
+└── credit_risk_model.ipynb         <- クレジットリスクモデリング
+
+scripts/
+├── setup.sql               <- インフラDDL（最初に実行）
+└── teardown.sql            <- 完全クリーンアップスクリプト
 ```
 
 ---
 
-## はじめに
+## クリーンアップ
 
-### 前提条件
+[`scripts/teardown.sql`](scripts/teardown.sql) を実行するか、以下のSQLを使用します：
+
+```sql
+DROP DATABASE IF EXISTS SAM_DEMO;
+DROP WAREHOUSE IF EXISTS SAM_DEMO_EXECUTION_WH;
+DROP WAREHOUSE IF EXISTS SAM_DEMO_CORTEX_WH;
+DROP ROLE IF EXISTS SAM_DEMO_ROLE;
+```
+
+---
+
+## 前提条件
+
 - Cortex機能が有効なSnowflakeアカウント
-- ACCOUNTADMINロール（セットアップ用）
-- Snowflake CoWorkが利用可能
-
-### ステップ1: マーケットプレイスデータの取得（初回のみ）
-
-1. Snowflakeアカウントにログイン
-2. [Snowflake Public Data (Free)](https://app.snowflake.com/marketplace/listing/GZTSZ290BV255)にアクセス
-3. 右上の**「Get」**ボタンをクリック
-4. プロンプトが表示されたら、**メールアドレス**を入力し、**「Save」**をクリックしてプロファイルを完了
-5. 「Get it for Free」ダイアログで：
-   - **データベース名**: デフォルトの`Snowflake_Public_Data_Free`のまま
-   - **アクセスできるロール**: `ACCOUNTADMIN`（またはデモ用ロール）を選択
-6. **「Get」**をクリックしてデータ共有をインストール
-
-> **注意**: これにより、SEC提出書類や財務データを含む90以上の公開ドメインデータソースを持つ共有データベース`SNOWFLAKE_PUBLIC_DATA_FREE`が作成されます。
-
-### ステップ2: セットアップスクリプトの実行
-
-[`scripts/setup.sql`](scripts/setup.sql)をSnowflake SQLワークシートに**コピー＆ペースト**して実行します。
-
-これにより自動的に以下が作成されます：
-- CURATEDディメンション/ファクトテーブルとビュー
-- ドキュメントテンプレートからのRAWコーパステーブル
-- 実際のSEC提出書類を含むMARKET_DATAテーブル
-- ドキュメント検索用のCortex Searchサービス
-- 構造化クエリ用のCortex Analystセマンティックビュー
-- 各ビジネスロール用のSnowflake CoWorkエージェント
-
-### ステップ3: Snowflake CoWorkへのアクセス
-
-**Snowflake CoWork** → エージェントを選択 → 質問を開始！
+- ACCOUNTADMIN ロール（初期セットアップ用）
+- Snowflake Intelligence が利用可能
+- ワークスペースノートブックサービス用のコンピュートプール
 
 ---
 
-## Cortexエージェント
-
-| エージェント | ロール | ツール数 | 主な機能 |
-|-------------|--------|---------|----------|
-| **Portfolio Copilot** | ポートフォリオマネージャー | 14 | 保有銘柄、リスク、イベント影響、サプライチェーン、SEC財務データ |
-| **Research Copilot** | リサーチアナリスト | 8 | マルチソースリサーチ、決算、投資メモ |
-| **Thematic Macro Advisor** | テーマ型PM | 6 | テーマポジショニング、マクロイベント、アロケーション |
-| **Quant Analyst** | クオンツアナリスト | 5 | ファクタースクリーニング、アトリビューション、検証 |
-| **Sales Advisor** | クライアントリレーションズ | 6 | クライアントレポーティング、RFP、オンボーディング |
-| **ESG Guardian** | ESGオフィサー | 9 | NGOレポート、コントロバーシー、エンゲージメント |
-| **Compliance Advisor** | コンプライアンスオフィサー | 6 | マンデート監視、違反検出 |
-| **Middle Office Copilot** | オペレーションマネージャー | 6 | 決済、照合、NAV、コーポレートアクション |
-| **Executive Command Center** | 経営幹部 | 9 | 会社KPI、競合情報、M&Aシミュレーション |
-
----
-
-## マルチツールデモプロンプト
-
-これらの代表的なプロンプトは、各エージェントの完全なオーケストレーション機能を示しています。完全なステップバイステップのシナリオ、トーキングポイント、期待される応答については、リンクされたドキュメントを参照してください。
-
----
-
-### Portfolio Copilot
-> **Anna（シニアPM）** | 14ツール | [完全なシナリオ →](docs/demo_scenarios_portfolio_manager.md)
-
-**イベント駆動型リスク評価**（9ツールオーケストレーション）:
-```
-台湾で半導体生産に影響を与える大地震が発生したと聞きました。以下をお願いします：
-1. このイベントを確認し、影響を受けるセクターを特定
-2. すべてのポートフォリオにおける台湾ベースのテクノロジー保有への直接エクスポージャーを表示
-3. サプライチェーン依存関係を通じた間接エクスポージャーを計算（特にApple、NVIDIAなどの企業）
-4. 集中制限に違反するポジションがないか確認
-5. SEC データを使用して最もエクスポージャーの高い企業の財務健全性を分析
-6. サプライチェーンの回復力について最近の決算説明会で経営陣が何を言っているか確認
-7. 半導体エクスポージャーについてアナリストが何を推奨しているか確認
-8. 地理的集中とイベント対応に関する当社のポリシーを確認
-9. このリスク評価を文書化した投資委員会メモを生成（具体的なポートフォリオアクションとタイムラインを含む）
-```
-
----
-
-### Research Copilot
-> **David（リサーチアナリスト）** | 8ツール | [完全なシナリオ →](docs/demo_scenarios_research_analyst.md)
-
-**投資メモ生成**:
-```
-NVIDIAについて、財務健全性、経営陣の見通し、アナリストの見解、競争ポジション、主要リスクをカバーする包括的な投資リサーチレポートを生成してください。買い/ホールド/売りの推奨を含めてください。
-```
-
----
-
-### Thematic Macro Advisor
-> **Anna（テーマ型PM）** | 6ツール | [完全なシナリオ →](docs/demo_scenarios_thematic_advisor.md)
-
-**AIインフラストラクチャ戦略開発**:
-```
-人工知能インフラストラクチャに関する2025年第1四半期のテーマ別投資戦略を策定しています。以下をお願いします：
-1. すべてのポートフォリオにおけるAIおよびデータセンターテーマへの現在のポートフォリオエクスポージャーを分析
-2. 主要なAIインフラストラクチャのサブテーマと投資機会を特定する最新のブローカーリサーチを検索
-3. AI支出とデータセンター容量計画について、主要テクノロジー企業の経営陣が決算説明会で何を言っているか確認
-4. AIインフラストラクチャ投資とパートナーシップに関する最近の企業発表を確認
-5. これを統合して、新興AIインフラストラクチャ機会に対して当社がどこでアンダーポジションになっているかを示すテーマ別ポジショニング推奨を作成
-```
-
----
-
-### Quant Analyst
-> **Dr. James Chen（クオンツ）** | 5ツール | [完全なシナリオ →](docs/demo_scenarios_quant_analyst.md)
-
-**マルチファクタースクリーニング戦略**:
-```
-バリュー、クオリティ、改善するモメンタムに焦点を当てたマルチファクター株式スクリーニング戦略を構築しています。以下をお願いします：
-1. 高いクオリティとバリューのファクターエクスポージャーを持つ証券について投資ユニバースをスクリーニング
-2. それらの結果の中から、過去6ヶ月間でモメンタムファクターのトレンドが改善している企業を特定
-3. SEC提出書類データを使用して財務ファンダメンタルズを検証 - 売上成長、マージン拡大、バランスシートの質を確認
-4. ブローカーの推奨がファクターシグナルと一致しているかアナリストリサーチと照合
-5. クオリティと成長特性を裏付ける経営陣のコメントについて決算説明会議事録を確認
-6. ファクタースコア、ファンダメンタル検証、アナリストの見解、システマティック投資戦略のための統計的有意性テスト（R二乗、p値）を含むランク付けリストを提供
-```
-
----
-
-### Sales Advisor
-> **James Mitchell（クライアントマネージャー）** | 6ツール | [完全なシナリオ →](docs/demo_scenarios_client_relations.md)
-
-**四半期クライアントプレゼンテーション**:
-```
-SAM ESGリーダーズグローバル株式ポートフォリオの四半期クライアントプレゼンテーションを準備する必要があります。以下をお願いします：
-1. ベンチマーク対比のポートフォリオリターン、上位保有銘柄、セクター配分、ESGメトリクスを含む2024年第4四半期のパフォーマンスデータを取得
-2. 承認された構造とフォーマットに従うための四半期クライアントレポートテンプレートを取得
-3. 当社の差別化されたアプローチと持続可能な開発に関する信念を統合するためのESG投資哲学ドキュメントを検索
-4. コンプライアンスポリシーから必要な規制免責事項とリスク警告を取得
-5. パフォーマンスデータ、投資哲学、コンプライアンス開示を承認されたテンプレート形式で組み合わせた、プロフェッショナルなクライアント向け四半期レポートを生成
-```
-
----
-
-### ESG Guardian
-> **Sofia（ESGオフィサー）** | 9ツール | [完全なシナリオ →](docs/demo_scenarios_esg_officer.md)
-
-**完全なESGリスク評価**:
-```
-SAM ESGリーダーズグローバル株式について、以下を含む完全なESGリスク評価を実施してください：当社の保有銘柄に影響を与える高または中程度の深刻度のコントロバーシーについてNGOレポートをスキャン、フラグが立てられた企業への正確なポートフォリオエクスポージャーを計算、当社のサステナブル投資ポリシーの閾値に対して検証、フラグが立てられた企業とのエンゲージメント履歴を確認、深刻度に基づくタイムラインとESG委員会への推奨を含む優先順位付けされた是正計画を提供。当社の標準テンプレートを使用して正式なESG委員会レポートを生成してください。
-```
-
----
-
-### Compliance Advisor
-> **Michael（コンプライアンスオフィサー）** | 6ツール | [完全なシナリオ →](docs/demo_scenarios_compliance_officer.md)
-
-**完全なコンプライアンス評価**:
-```
-SAM Technology & Infrastructureについて以下を含む完全なコンプライアンス評価を実施してください：
-1. 解決済みと未解決を示す過去の違反アラート
-2. 集中制限（単一ポジションおよび発行体）に対してチェックされた現在のポートフォリオポジション
-3. 集中リスクポリシーからのポリシー閾値
-4. 是正のためのPMコミットメントを文書化したエンゲージメントノート
-5. 適切なテンプレートを使用した正式なリスク委員会コンプライアンスレポート
-6. FCA提出用のプロフェッショナルなPDFを生成
-```
-
----
-
-### Middle Office Copilot
-> **Sarah（オペレーションマネージャー）** | 6ツール | [完全なシナリオ →](docs/demo_scenarios_middle_office.md)
-
-**日次オペレーションレビュー**:
-```
-過去3営業日のすべての決済失敗を表示し、原因を理解するのを手伝ってください。
-```
-
-```
-すべてのポートフォリオについて本日の照合差異をまとめ、重要なものにフラグを立ててください。
-```
-
-```
-すべてのファンドにおける本日のNAV計算の状況は？調査が必要な異常はありますか？
-```
-
-```
-今後5営業日のすべての保留中のコーポレートアクションを表示し、即座の処理が必要なものをハイライトしてください。
-```
-
----
-
-### Executive Command Center
-> **Sarah Chen（アセットマネジメント責任者）** | 9ツール | [完全なシナリオ →](docs/demo_scenarios_executive.md)
-
-**PDF付き完全な取締役会ブリーフィング**:
-```
-取締役会向けに、すべての戦略にわたる会社全体のAUMとパフォーマンス、集中懸念を含むクライアントフロー分析、コンテキスト付きの最高および最低パフォーマンス戦略、現在の戦略的方向性を説明する関連する投資哲学ポジショニングをカバーする完全なエグゼクティブブリーフィングを準備してください。取締役会配布用のプロフェッショナルなPDFを生成してください。
-```
-
-**M&Aシミュレーション**:
-```
-これをモデル化しましょう。500億ドルAUMのビジネスを買収する高レベルのシミュレーションを実行してください。見つけた収益数値を使用し、コストシナジーに関する当社の標準的な前提を適用してください。初年度の1株当たり利益への予想される影響は何ですか？
-```
-
----
-
-## 詳細なシナリオドキュメント
-
-デモを準備するプレゼンター向けに、各ロールにはステップバイステップの会話フロー、期待される応答、トーキングポイント、ビジネス価値の説明を含む包括的なドキュメントがあります。
-
-| ロール | ドキュメント |
-|--------|-------------|
-| ポートフォリオマネージャー | [demo_scenarios_portfolio_manager.md](docs/demo_scenarios_portfolio_manager.md) |
-| リサーチアナリスト | [demo_scenarios_research_analyst.md](docs/demo_scenarios_research_analyst.md) |
-| テーマアドバイザー | [demo_scenarios_thematic_advisor.md](docs/demo_scenarios_thematic_advisor.md) |
-| クオンツアナリスト | [demo_scenarios_quant_analyst.md](docs/demo_scenarios_quant_analyst.md) |
-| クライアントリレーションズ | [demo_scenarios_client_relations.md](docs/demo_scenarios_client_relations.md) |
-| ESGオフィサー | [demo_scenarios_esg_officer.md](docs/demo_scenarios_esg_officer.md) |
-| コンプライアンスオフィサー | [demo_scenarios_compliance_officer.md](docs/demo_scenarios_compliance_officer.md) |
-| ミドルオフィス | [demo_scenarios_middle_office.md](docs/demo_scenarios_middle_office.md) |
-| エグゼクティブ | [demo_scenarios_executive.md](docs/demo_scenarios_executive.md) |
-| リスク＆コンプライアンス | [demo_scenarios_risk_compliance.md](docs/demo_scenarios_risk_compliance.md) |
-
-**参考ドキュメント:**
-- [データモデル](docs/data_model.md) - 完全なデータアーキテクチャ
-- [データリネージ](docs/data_lineage.md) - データフロードキュメント
-- [シナリオ概要](docs/demo_scenarios.md) - ロール別の全シナリオ
-
----
-
-## 結論
-
-このガイドは、**金融サービスにおけるエンタープライズAIの未来**を表しています：ポートフォリオマネージャーからコンプライアンスオフィサー、エグゼクティブまで、すべてのロールが自然な会話を通じて定量的な分析と定性的なインサイトの両方にアクセスできる統合インテリジェンスレイヤーです。
-
-**アセットマネージャー向け**: 投資プロフェッショナルがシステム間でデータを探し回ったり、手動でレポートを作成したり、データチームがダッシュボードを構築するのを待ったりする時間がゼロの世界を想像してください。すべての質問に、ポートフォリオ分析とリサーチ、リスク指標とポリシーガイダンス、パフォーマンスデータとクライアントコンテキストを組み合わせた即座の包括的な回答が得られます。
-
-**Snowflakeプラクティショナー向け**: このガイドは、本番グレードのAIエージェントを構築するための完全なブループリントを提供します：
-- 複雑な財務データ用のセマンティックビューの構造化方法
-- マルチドキュメントRAG用のコーパステーブルの設計方法
-- 異なるペルソナ用のエージェント指示の設定方法
-- 単一の会話で複数のツールをオーケストレーションする方法
-
-**ビジョン**: AIが構造化データと非構造化データをシームレスに橋渡しし、ビジネスコンテキストを理解し、プロフェッショナルなアウトプットを生成できるとき、投資チームはリアクティブからプロアクティブへ、データ収集からインサイト生成へ、手動コンプライアンスから自動化されたガバナンスへと移行します。
-
----
-
-## リソース
+## 参考ドキュメント
 
 - [Snowflake CoWorkドキュメント](https://docs.snowflake.com/en/user-guide/snowflake-intelligence)
 - [Cortex Agentsガイド](https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents)
@@ -314,14 +180,10 @@ SAM Technology & Infrastructureについて以下を含む完全なコンプラ�
 
 ## ライセンス
 
-Copyright (c) Snowflake Inc. All rights reserved.
-
-このリポジトリのコードは[Apache 2.0ライセンス](LICENSE)の下でライセンスされています。
-
-`docs/`ディレクトリにあるドキュメントは、[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)ライセンス](https://creativecommons.org/licenses/by-nc-sa/4.0/)の下で別途ライセンスされています。このライセンスの完全な条項は[LICENSE-DATA](LICENSE-DATA)ファイルで確認できます。
+Apache-2.0 — 詳細は [LICENSE](LICENSE) を参照してください。
 
 ---
 
 ## 謝辞
 
-このリポジトリは[Snowflake-Labs/sfguide-agentic-ai-for-asset-management](https://github.com/Snowflake-Labs/sfguide-agentic-ai-for-asset-management)の日本語翻訳版です。
+このリポジトリは [Snowflake-Labs/sfguide-agentic-ai-for-asset-management](https://github.com/Snowflake-Labs/sfguide-agentic-ai-for-asset-management) の日本語翻訳版です。
