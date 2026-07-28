@@ -68,6 +68,10 @@ if not os.path.isdir(_python_dir):
 if _python_dir not in sys.path:
     sys.path.insert(0, _python_dir)
 
+# Clear any cached 'data' namespace package that may shadow python/data/
+# (root-level data/ directory can be picked up as namespace package before python/data/)
+sys.modules.pop('data', None)
+
 from snowflake.snowpark.context import get_active_session
 
 import config
